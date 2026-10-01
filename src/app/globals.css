@@ -1,0 +1,247 @@
+@import "tailwindcss";
+
+/* ───────────────────────────────────────────────────────────────────────────
+   BARMAN — colour tokens
+   Single source of truth for every colour on the landing page.
+
+   Two layers on purpose:
+   1. Plain sRGB (hex / rgb) values below. Every browser from IE-era forward
+      understands them, so the palette never depends on new colour syntax.
+   2. A `@supports (color: oklch(...))` block that re-declares the accents in
+      OKLCH with a little more chroma. Wide-gamut (P3) screens get a richer
+      gold; anything older silently keeps the sRGB values.
+
+   Contrast measured against --bar-bg:  text 16.5:1 · accent 8.9:1 ·
+   muted 9.3:1 · subtle 6.0:1 · strong border 3.4:1. Body text tokens clear
+   WCAG AA (4.5:1) and the strong border clears the 3:1 non-text minimum.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Tells the UA to render form controls, scrollbars and the canvas dark. */
+  color-scheme: dark;
+
+  /* Surfaces, darkest to lightest. */
+  --bar-bg: #0a0a0a;
+  --bar-bg-warm: #1a1410;
+  --bar-bg-deep: #0a0808;
+  --bar-surface: #151310;
+  --bar-surface-raised: #1e1b16;
+  --bar-surface-hover: #2a2620;
+
+  /* Lines: soft for decorative rules, strong for controls (3:1 minimum). */
+  --bar-border: #3a352e;
+  --bar-border-strong: #766f63;
+
+  /* Brand gold. */
+  --bar-accent: #c8a97e;
+  --bar-accent-bright: #e3c99b;
+  --bar-accent-dim: #a58a5f;
+  --bar-accent-faint: rgb(200 169 126 / 8%);
+  --bar-accent-soft: rgb(200 169 126 / 15%);
+  --bar-accent-line: rgb(200 169 126 / 25%);
+  --bar-accent-line-strong: rgb(200 169 126 / 50%);
+
+  /* Text, strongest to quietest — all AA-legible on every surface above. */
+  --bar-text: #edeae4;
+  --bar-text-muted: #b8b1a6;
+  --bar-text-subtle: #948d82;
+
+  /* The band of light that makes the BARMAN wordmark legible on the dark
+     room behind it. Tuned to stay between 4.6:1 and 7:1 against --bar-bg. */
+  --bar-wordmark-lit: rgb(200 169 126 / 88%);
+  --bar-wordmark: rgb(200 169 126 / 70%);
+  --bar-wordmark-dim: rgb(200 169 126 / 46%);
+
+  /* Shadows and the warm vignette used behind the wordmark. */
+  --bar-shadow: rgb(0 0 0 / 40%);
+  --bar-warm: rgb(30 20 10 / 80%);
+
+  --bar-focus: var(--bar-accent);
+  --bar-radius: 10px;
+}
+
+/* Wide-gamut upgrade: same lightness and hue, extra chroma on P3 displays. */
+@supports (color: oklch(0% 0 0)) {
+  :root {
+    --bar-accent: oklch(75.2% 0.105 78);
+    --bar-accent-bright: oklch(84.7% 0.1 82);
+    --bar-accent-dim: oklch(64.8% 0.09 79);
+    --bar-accent-faint: oklch(75.2% 0.105 78 / 8%);
+    --bar-accent-soft: oklch(75.2% 0.105 78 / 15%);
+    --bar-accent-line: oklch(75.2% 0.105 78 / 25%);
+    --bar-accent-line-strong: oklch(75.2% 0.105 78 / 50%);
+    --bar-wordmark-lit: oklch(75.2% 0.105 78 / 88%);
+    --bar-wordmark: oklch(75.2% 0.105 78 / 70%);
+    --bar-wordmark-dim: oklch(75.2% 0.105 78 / 46%);
+  }
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--bar-bg);
+  color: var(--bar-text);
+  /* Firefox + standards path for scrollbar colouring. */
+  scrollbar-color: var(--bar-accent-dim) var(--bar-bg);
+  scrollbar-width: thin;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  /* The fallback inside var() keeps the whole declaration valid if the
+     next/font variable is ever missing. */
+  font-family: var(--font-body, Georgia), Georgia, "Times New Roman", serif;
+  background: var(--bar-bg);
+  color: var(--bar-text);
+  min-height: 100vh;
+  min-height: 100svh;
+  overflow-x: hidden;
+  /* Light serifs on a black room render heavy with subpixel hinting. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* The landing is the page: it fills the window exactly, so there is no strip of
+   empty body colour under it. Both declarations use the same unit as the body's
+   min-height, so the document never grows past the scroll area. */
+[data-slipstream-demo] {
+  height: 100vh;
+  height: 100svh;
+}
+
+/* One visible ring for every interactive element, in every container. */
+:focus-visible {
+  outline: 2px solid var(--bar-focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--bar-accent);
+  color: var(--bar-bg);
+}
+
+/* WebKit/Blink scrollbars, matching the standards rules above. */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bar-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bar-accent-dim);
+  border: 2px solid var(--bar-bg);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--bar-accent);
+}
+
+/* Content fades and rises the first time it scrolls into view (see lib/use-reveal).
+   The element ships hidden; the hook flips it to "in" and the animation expires
+   by itself, so it never overrides the components' own transitions. */
+[data-reveal="out"] {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+[data-reveal="in"] {
+  animation: bar-reveal 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) var(--reveal-delay, 0ms) backwards;
+}
+
+@keyframes bar-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal="out"] {
+    opacity: 1;
+    transform: none;
+  }
+
+  [data-reveal="in"] {
+    animation: none;
+  }
+}
+
+/* Screen-reader-only text (used for star ratings and other glyph labels). */
+[data-bar-sr] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Ask for more contrast and the quiet greys step up to full strength. */
+@media (prefers-contrast: more) {
+  :root {
+    --bar-text-muted: var(--bar-text);
+    --bar-text-subtle: var(--bar-text-muted);
+    --bar-border: var(--bar-border-strong);
+    --bar-border-strong: var(--bar-text-muted);
+    --bar-accent-line: var(--bar-accent-line-strong);
+    --bar-accent-line-strong: var(--bar-accent);
+  }
+}
+
+/* Windows High Contrast / forced colours: hand the palette back to the OS. */
+@media (forced-colors: active) {
+  :root {
+    --bar-bg: Canvas;
+    --bar-bg-warm: Canvas;
+    --bar-bg-deep: Canvas;
+    --bar-surface: Canvas;
+    --bar-surface-raised: Canvas;
+    --bar-surface-hover: Canvas;
+    --bar-border: CanvasText;
+    --bar-border-strong: CanvasText;
+    --bar-accent: CanvasText;
+    --bar-accent-bright: CanvasText;
+    --bar-accent-dim: GrayText;
+    --bar-accent-faint: Canvas;
+    --bar-accent-soft: Canvas;
+    --bar-accent-line: CanvasText;
+    --bar-accent-line-strong: CanvasText;
+    --bar-wordmark-lit: CanvasText;
+    --bar-wordmark: CanvasText;
+    --bar-wordmark-dim: CanvasText;
+    --bar-text: CanvasText;
+    --bar-text-muted: CanvasText;
+    --bar-text-subtle: GrayText;
+    --bar-shadow: transparent;
+    --bar-warm: Canvas;
+    --bar-focus: Highlight;
+  }
+
+  /* Decorative gradients hide so the system colours are never washed out,
+     and the wordmark becomes a solid system-coloured shape instead. */
+  [data-barman-field],
+  [data-barman-wordmark] {
+    background-image: none !important;
+  }
+
+  [data-barman-wordmark] {
+    background-color: CanvasText;
+  }
+}
